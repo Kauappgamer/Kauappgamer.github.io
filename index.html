@@ -2,85 +2,73 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Gravador PRO</title>
+<title>Gravador PRO Ultra</title>
 
 <style>
-  body {
-    background: #020617;
-    color: white;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 20px;
-  }
+body {
+  background: #020617;
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 15px;
+}
 
-  h2 {
-    margin-bottom: 10px;
-  }
+video {
+  width: 70%;
+  border-radius: 10px;
+  background: black;
+}
 
-  select, button {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    font-size: 14px;
-  }
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
-  button {
-    background: #22c55e;
-    color: white;
-    cursor: pointer;
-  }
+button, select, input {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+}
 
-  .stop {
-    background: #ef4444;
-  }
+button {
+  cursor: pointer;
+  background: #22c55e;
+  color: white;
+}
 
-  video {
-    width: 70%;
-    display: none;
-    border-radius: 10px;
-    background: black;
-  }
-
-  #downloadBtn {
-    display: none;
-    background: #3b82f6;
-  }
-
-  .badge {
-    color: #22c55e;
-    font-size: 12px;
-  }
+.stop { background: #ef4444; }
+#downloadBtn { background: #3b82f6; display:none; }
 </style>
 </head>
 
 <body>
 
-<h2>🎥 Gravador PRO</h2>
+<h2>🎥 Gravador PRO ULTRA</h2>
 
-<div>
-  <label>Qualidade:</label><br>
+<div class="controls">
   <select id="quality">
-    <option value="256x144|200000">144p</option>
-    <option value="426x240|300000">240p</option>
-    <option value="640x360|500000">360p</option>
-    <option value="854x480|800000">480p</option>
-    <option value="1280x720|2500000" selected>720p (Recomendado)</option>
+    <option value="1280x720|2500000">720p</option>
     <option value="1920x1080|5000000">1080p</option>
   </select>
-</div>
 
-<label>
-  <input type="checkbox" id="mic">
-  Microfone
-</label>
+  <label><input type="checkbox" id="mic"> Mic</label>
+  <label><input type="checkbox" id="cam"> Câmera</label>
+
+  🎙 Mic Vol <input type="range" id="micVol" min="0" max="2" step="0.1" value="1">
+  🔊 Sistema <input type="range" id="sysVol" min="0" max="2" step="0.1" value="1">
+</div>
 
 <button id="btn">Gravar</button>
 
-<video id="video" controls></video>
+<video id="preview" autoplay muted></video>
+<video id="video" controls style="display:none;"></video>
+
 <button id="downloadBtn">Salvar</button>
 
 <script>
@@ -88,12 +76,17 @@ let recorder, stream;
 let chunks = [];
 
 const btn = document.getElementById("btn");
+const preview = document.getElementById("preview");
 const video = document.getElementById("video");
 const downloadBtn = document.getElementById("downloadBtn");
+
 const mic = document.getElementById("mic");
+const cam = document.getElementById("cam");
+const micVol = document.getElementById("micVol");
+const sysVol = document.getElementById("sysVol");
 const quality = document.getElementById("quality");
 
-btn.onclick = async () => {
+btn.onclick = () => {
   if (btn.textContent === "Gravar") start();
   else stop();
 };
@@ -104,38 +97,82 @@ async function start() {
     const [width, height] = res.split("x");
 
     const screen = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        width: parseInt(width),
-        height: parseInt(height),
-        frameRate: 30
-      },
+      video: { width: +width, height: +height, frameRate: 30 },
       audio: true
     });
 
-    let tracks = [...screen.getTracks()];
+    const audioContext = new AudioContext();
+    const dest = audioContext.createMediaStreamDestination();
 
-    if (mic.checked) {
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true
-        }
-      });
+    // 🔊 Áudio do sistema
+    if (screen.getAudioTracks().length > 0) {
+      const sysSource = audioContext.createMediaStreamSource(screen);
+      const sysGain = audioContext.createGain();
+      sysGain.gain.value = sysVol.value;
 
-      tracks.push(...micStream.getAudioTracks());
+      sysSource.connect(sysGain).connect(dest);
+
+      sysVol.oninput = () => sysGain.gain.value = sysVol.value;
     }
 
-    stream = new MediaStream(tracks);
+    let videoTracks = [...screen.getVideoTracks()];
 
-    // 🔥 evita eco
-    const hiddenVideo = document.createElement("video");
-    hiddenVideo.srcObject = stream;
-    hiddenVideo.muted = true;
-    hiddenVideo.play();
+    // 🎙 Microfone
+    if (mic.checked) {
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      const micGain = audioContext.createGain();
+
+      micGain.gain.value = micVol.value;
+
+      micSource.connect(micGain).connect(dest);
+
+      micVol.oninput = () => micGain.gain.value = micVol.value;
+    }
+
+    // 📷 Câmera overlay
+    if (cam.checked) {
+      const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      const screenVideo = document.createElement("video");
+      screenVideo.srcObject = screen;
+      screenVideo.play();
+
+      const camVideo = document.createElement("video");
+      camVideo.srcObject = camStream;
+      camVideo.play();
+
+      function draw() {
+        ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+
+        // overlay canto inferior direito
+        ctx.drawImage(camVideo, canvas.width - 220, canvas.height - 160, 200, 150);
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+
+      const canvasStream = canvas.captureStream(30);
+      videoTracks = canvasStream.getVideoTracks();
+    }
+
+    stream = new MediaStream([
+      ...videoTracks,
+      ...dest.stream.getAudioTracks()
+    ]);
+
+    preview.srcObject = stream;
 
     recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8",
-      videoBitsPerSecond: parseInt(bitrate)
+      mimeType: "video/webm;codecs=vp8,opus",
+      videoBitsPerSecond: +bitrate
     });
 
     chunks = [];
@@ -152,7 +189,6 @@ async function start() {
       video.src = url;
 
       downloadBtn.style.display = "block";
-
       downloadBtn.onclick = () => {
         const a = document.createElement("a");
         a.href = url;
@@ -161,7 +197,7 @@ async function start() {
       };
     };
 
-    recorder.start(1000);
+    recorder.start(2000);
 
     btn.textContent = "Parar";
     btn.classList.add("stop");
