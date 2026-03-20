@@ -2,80 +2,59 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Gravador PRO</title>
+<title>Gravador de tela</title>
 
 <style>
-  body {
-    background: #020617;
-    color: white;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 20px;
-  }
+body {
+  background: #020617;
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 20px;
+}
 
-  h2 {
-    margin-bottom: 10px;
-  }
+select, button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
 
-  select, button {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    font-size: 14px;
-  }
+button {
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
 
-  button {
-    background: #22c55e;
-    color: white;
-    cursor: pointer;
-  }
+.stop { background: #ef4444; }
 
-  .stop {
-    background: #ef4444;
-  }
+video {
+  width: 70%;
+  display: none;
+  background: black;
+}
 
-  video {
-    width: 70%;
-    display: none;
-    border-radius: 10px;
-    background: black;
-  }
-
-  #downloadBtn {
-    display: none;
-    background: #3b82f6;
-  }
-
-  .badge {
-    color: #22c55e;
-    font-size: 12px;
-  }
+#downloadBtn {
+  display: none;
+  background: #3b82f6;
+}
 </style>
 </head>
 
 <body>
 
-<h2>🎥 Gravador PRO</h2>
+<h2>🎥 Gravador de tela</h2>
 
-<div>
-  <label>Qualidade:</label><br>
-  <select id="quality">
-    <option value="256x144|200000">144p</option>
-    <option value="426x240|300000">240p</option>
-    <option value="640x360|500000">360p</option>
-    <option value="854x480|800000">480p</option>
-    <option value="1280x720|2500000" selected>720p (Recomendado)</option>
-    <option value="1920x1080|5000000">1080p</option>
-  </select>
-</div>
+<select id="quality">
+  <option value="1280x720|2500000" selected>720p</option>
+  <option value="1920x1080|5000000">1080p</option>
+</select>
 
 <label>
-  <input type="checkbox" id="mic">
-  Microfone
+  <input type="checkbox" id="mic"> Microfone
 </label>
 
 <button id="btn">Gravar</button>
@@ -103,39 +82,36 @@ async function start() {
     const [res, bitrate] = quality.value.split("|");
     const [width, height] = res.split("x");
 
-    const screen = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        width: parseInt(width),
-        height: parseInt(height),
-        frameRate: 30
-      },
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { width: +width, height: +height, frameRate: 30 },
       audio: true
     });
 
-    let tracks = [...screen.getTracks()];
+    const audioContext = new AudioContext();
+    const destination = audioContext.createMediaStreamDestination();
 
-    if (mic.checked) {
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true
-        }
-      });
-
-      tracks.push(...micStream.getAudioTracks());
+    // áudio do sistema
+    if (screenStream.getAudioTracks().length > 0) {
+      const systemSource = audioContext.createMediaStreamSource(screenStream);
+      systemSource.connect(destination);
     }
 
-    stream = new MediaStream(tracks);
+    // microfone
+    if (mic.checked) {
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      micSource.connect(destination);
+    }
 
-    // 🔥 evita eco
-    const hiddenVideo = document.createElement("video");
-    hiddenVideo.srcObject = stream;
-    hiddenVideo.muted = true;
-    hiddenVideo.play();
+    // junta vídeo + áudio misturado
+    stream = new MediaStream([
+      ...screenStream.getVideoTracks(),
+      ...destination.stream.getAudioTracks()
+    ]);
 
     recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8",
-      videoBitsPerSecond: parseInt(bitrate)
+      mimeType: "video/webm",
+      videoBitsPerSecond: +bitrate
     });
 
     chunks = [];
@@ -152,7 +128,6 @@ async function start() {
       video.src = url;
 
       downloadBtn.style.display = "block";
-
       downloadBtn.onclick = () => {
         const a = document.createElement("a");
         a.href = url;
@@ -161,7 +136,7 @@ async function start() {
       };
     };
 
-    recorder.start(1000);
+    recorder.start();
 
     btn.textContent = "Parar";
     btn.classList.add("stop");
