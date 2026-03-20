@@ -2,64 +2,74 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Gravador de tela</title>
+<title>Gravador PRO</title>
 
 <style>
-body {
-  background: #020617;
-  color: white;
-  font-family: sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 20px;
-}
+  body {
+    background: #020617;
+    color: white;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 20px;
+  }
 
-select, button {
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-}
+  h2 {
+    margin-bottom: 10px;
+  }
 
-button {
-  background: #22c55e;
-  color: white;
-  cursor: pointer;
-}
+  select, button {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+  }
 
-.stop {
-  background: #ef4444;
-}
+  button {
+    background: #22c55e;
+    color: white;
+    cursor: pointer;
+  }
 
-video {
-  width: 70%;
-  display: none;
-  border-radius: 10px;
-  background: black;
-}
+  .stop {
+    background: #ef4444;
+  }
 
-#downloadBtn {
-  display: none;
-  background: #3b82f6;
-}
+  video {
+    width: 70%;
+    display: none;
+    border-radius: 10px;
+    background: black;
+  }
+
+  #downloadBtn {
+    display: none;
+    background: #3b82f6;
+  }
+
+  .badge {
+    color: #22c55e;
+    font-size: 12px;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>🎥 Gravador de tela</h2>
+<h2>🎥 Gravador PRO</h2>
 
 <div>
   <label>Qualidade:</label><br>
   <select id="quality">
-    <option value="256x144|150000">144p</option>
-    <option value="426x240|250000">240p</option>
-    <option value="640x360|400000">360p</option>
-    <option value="854x480|700000">480p</option>
-    <option value="1280x720|1800000" selected>720p</option>
-    <option value="1920x1080|3500000">1080p</option>
+    <option value="256x144|200000">144p</option>
+    <option value="426x240|300000">240p</option>
+    <option value="640x360|500000">360p</option>
+    <option value="854x480|800000">480p</option>
+    <option value="1280x720|2500000" selected>720p (Recomendado)</option>
+    <option value="1920x1080|5000000">1080p</option>
   </select>
 </div>
 
@@ -88,31 +98,18 @@ btn.onclick = async () => {
   else stop();
 };
 
-function getBestMimeType() {
-  const types = [
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm"
-  ];
-
-  return types.find(type => MediaRecorder.isTypeSupported(type)) || "";
-}
-
 async function start() {
   try {
     const [res, bitrate] = quality.value.split("|");
     const [width, height] = res.split("x");
 
-    // 🔥 FPS adaptativo (evita travar no Roblox)
-    const fps = width >= 1280 ? 20 : 25;
-
     const screen = await navigator.mediaDevices.getDisplayMedia({
       video: {
         width: parseInt(width),
         height: parseInt(height),
-        frameRate: fps
+        frameRate: 30
       },
-      audio: false // 🔥 remove áudio pesado do sistema
+      audio: true
     });
 
     let tracks = [...screen.getTracks()];
@@ -130,16 +127,14 @@ async function start() {
 
     stream = new MediaStream(tracks);
 
-    // evita eco e melhora estabilidade
+    // 🔥 evita eco
     const hiddenVideo = document.createElement("video");
     hiddenVideo.srcObject = stream;
     hiddenVideo.muted = true;
     hiddenVideo.play();
 
-    const mimeType = getBestMimeType();
-
     recorder = new MediaRecorder(stream, {
-      mimeType: mimeType,
+      mimeType: "video/webm;codecs=vp8",
       videoBitsPerSecond: parseInt(bitrate)
     });
 
@@ -166,8 +161,7 @@ async function start() {
       };
     };
 
-    // 🔥 chunks maiores = menos travamento
-    recorder.start(2000);
+    recorder.start(1000);
 
     btn.textContent = "Parar";
     btn.classList.add("stop");
