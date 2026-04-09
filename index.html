@@ -1,219 +1,423 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Gravador de tela</title>
-
+<meta charset="UTF-8" />
+<title>SIX SEVEN KID - PHONK EXPERIENCE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-body {
-  background: #020617;
-  color: white;
-  font-family: sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 15px;
-}
-
-video {
-  width: 70%;
-  border-radius: 10px;
-  background: black;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-button, select, input {
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-}
-
-button {
-  cursor: pointer;
-  background: #22c55e;
-  color: white;
-}
-
-.stop { background: #ef4444; }
-#downloadBtn { background: #3b82f6; display:none; }
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Orbitron', monospace;
+    user-select: none;
+    cursor: pointer;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    color: white;
+  }
+  #container {
+    position: relative;
+    width: 100vw; height: 100vh;
+    overflow: visible;
+  }
+  #number {
+    font-size: 12vw;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    color: white;
+    text-shadow:
+      0 0 6px rgba(255,255,255,0.7),
+      0 0 18px rgba(255,255,255,0.4);
+    transition:
+      color 0.8s ease,
+      font-size 0.8s ease,
+      transform 0.8s ease,
+      filter 0.6s ease;
+    z-index: 100;
+    animation: breathing 3s ease-in-out infinite;
+  }
+  @keyframes breathing {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+  }
+  #number.blue-gradient {
+    background: linear-gradient(90deg, #00ffff 40%, #003366 85%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px #00ffff);
+    font-size: 18vw;
+    animation: pulseBlue 2.4s ease-in-out infinite;
+  }
+  @keyframes pulseBlue {
+    0%, 100% { filter: drop-shadow(0 0 12px #00ffff); }
+    50% { filter: drop-shadow(0 0 30px #00ffff); }
+  }
+  #number.red {
+    color: #ff2222;
+    filter: drop-shadow(0 0 16px #ff2222);
+    font-size: 14vw;
+    animation: pulseRed 2s ease-in-out infinite;
+  }
+  @keyframes pulseRed {
+    0%, 100% { filter: drop-shadow(0 0 16px #ff2222); }
+    50% { filter: drop-shadow(0 0 35px #ff2222); }
+  }
+  #number.gray {
+    color: #888888;
+    filter: drop-shadow(0 0 12px #888);
+    font-size: 16vw;
+    animation: pulseGray 3s ease-in-out infinite;
+  }
+  @keyframes pulseGray {
+    0%, 100% { filter: drop-shadow(0 0 12px #888); }
+    50% { filter: drop-shadow(0 0 28px #888); }
+  }
+  #flash {
+    pointer-events: none;
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: transparent;
+    z-index: 9999;
+    transition: background-color 0.12s ease-out;
+  }
+  #hands {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 40vw; height: 25vw;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 90;
+    display: none;
+  }
+  .hand {
+    position: absolute;
+    top: 50%;
+    width: 15vw; height: 25vw;
+    background: linear-gradient(145deg, #7d7d7d 0%, #3a3a3a 100%);
+    border-radius: 8vw 8vw 12vw 12vw / 12vw 12vw 18vw 18vw;
+    box-shadow:
+      inset -1vw 0.3vw 1vw #555,
+      inset 1vw 0.3vw 0.8vw #aaa;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px rgba(50,50,50,0.7));
+    transform-origin: center center;
+    animation-timing-function: ease-in-out;
+  }
+  #hand-left {
+    left: 0;
+    animation: handMoveLeft 2.4s infinite alternate;
+  }
+  #hand-right {
+    right: 0;
+    animation: handMoveRight 2.4s infinite alternate;
+  }
+  @keyframes handMoveLeft {
+    0% { transform: translateX(0) rotate(-5deg); }
+    50% { transform: translateX(4vw) rotate(3deg); }
+    100% { transform: translateX(0) rotate(-5deg); }
+  }
+  @keyframes handMoveRight {
+    0% { transform: translateX(0) rotate(5deg); }
+    50% { transform: translateX(-4vw) rotate(-3deg); }
+    100% { transform: translateX(0) rotate(5deg); }
+  }
+  #character {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 50vw; height: 70vw;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    filter: brightness(0.2) saturate(0) contrast(1.3);
+    transition: opacity 1.5s ease, filter 1.2s ease;
+    user-select: none;
+  }
+  #character.char1 {
+    opacity: 1;
+    filter: brightness(0.35) saturate(0) contrast(1.3);
+  }
+  #character.char2 {
+    opacity: 1;
+    filter: brightness(0.25) saturate(0) contrast(1.7);
+  }
+  #fog {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle, rgba(180,180,180,0.3) 30%, transparent 85%);
+    pointer-events: none;
+    z-index: 80;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    filter: blur(6px);
+  }
+  #fog.active {
+    opacity: 1;
+    animation: fogMove 12s linear infinite;
+  }
+  @keyframes fogMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 100% 100%; }
+  }
+  #glitchText {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 150;
+    font-size: 18vw;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    user-select: none;
+    display: none;
+    animation: glitchAnim 1s infinite;
+    letter-spacing: 0.1em;
+    mix-blend-mode: screen;
+    text-shadow:
+      2px 0 #00fff7,
+      -2px 0 #ff00f7;
+  }
+  @keyframes glitchAnim {
+    0%, 100% {
+      text-shadow:
+        2px 0 #00fff7,
+        -2px 0 #ff00f7;
+    }
+    20%, 60% {
+      text-shadow:
+        4px 0 #00f7ff,
+        -4px 0 #f700ff;
+    }
+    40%, 80% {
+      text-shadow:
+        1px 0 #00fff7,
+        -1px 0 #ff00f7;
+    }
+  }
+  #container.zooming #number {
+    animation: zoomPulse 1.2s ease forwards;
+  }
+  @keyframes zoomPulse {
+    0% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 4px white); }
+    50% { transform: translate(-50%, -50%) scale(1.35); filter: drop-shadow(0 0 24px cyan); }
+    100% { transform: translate(-50%, -50%) scale(1); filter: drop-shadow(0 0 4px white); }
+  }
 </style>
 </head>
-
 <body>
 
-<h2>🎥 Gravador de tela</h2>
+<div id="flash"></div>
+<div id="fog"></div>
 
-<div class="controls">
-  <select id="quality">
-    <option value="1280x720|2500000">720p</option>
-    <option value="1920x1080|5000000">1080p</option>
-  </select>
+<div id="container" aria-live="polite" aria-atomic="true" role="region" tabindex="0">
+  <svg id="character" viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" class="char1" aria-label="Personagem 1">
+    <circle cx="50" cy="45" r="35" fill="#222" stroke="#111" stroke-width="3"/>
+    <circle cx="35" cy="35" r="9" fill="#eee" />
+    <circle cx="65" cy="35" r="9" fill="#eee" />
+    <circle cx="35" cy="35" r="4" fill="#000" />
+    <circle cx="65" cy="35" r="4" fill="#000" />
+    <rect x="25" y="75" width="50" height="75" fill="#111" />
+    <ellipse cx="50" cy="105" rx="22" ry="32" fill="#000" />
+    <path d="M28 105 Q50 155 72 105" stroke="#555" stroke-width="2" fill="none" />
+  </svg>
 
-  <label><input type="checkbox" id="mic"> Mic</label>
-  <label><input type="checkbox" id="cam"> Câmera</label>
+  <div id="number" aria-live="polite" aria-atomic="true">1</div>
 
-  🎙 Mic Vol <input type="range" id="micVol" min="0" max="2" step="0.1" value="1">
-  🔊 Sistema <input type="range" id="sysVol" min="0" max="2" step="0.1" value="1">
+  <div id="hands" aria-hidden="true">
+    <div id="hand-left" class="hand" aria-label="mão esquerda"></div>
+    <div id="hand-right" class="hand" aria-label="mão direita"></div>
+  </div>
 </div>
 
-<button id="btn">Gravar</button>
+<div id="glitchText" aria-hidden="true"></div>
 
-<video id="preview" autoplay muted></video>
-<video id="video" controls style="display:none;"></video>
-
-<button id="downloadBtn">Salvar</button>
+<audio id="phonkAudio" loop preload="auto" crossorigin="anonymous" style="display:none">
+  <source src="https://cdn.pixabay.com/download/audio/2023/02/08/audio_488fffdab4.mp3?filename=phonk-lofi-beat-12471.mp3" type="audio/mpeg" />
+  Seu navegador não suporta áudio.
+</audio>
 
 <script>
-let recorder, stream;
-let chunks = [];
+(() => {
+  const numberEl = document.getElementById('number');
+  const flashEl = document.getElementById('flash');
+  const fogEl = document.getElementById('fog');
+  const handsEl = document.getElementById('hands');
+  const containerEl = document.getElementById('container');
+  const glitchTextEl = document.getElementById('glitchText');
+  const characterEl = document.getElementById('character');
+  const phonkAudio = document.getElementById('phonkAudio');
 
-const btn = document.getElementById("btn");
-const preview = document.getElementById("preview");
-const video = document.getElementById("video");
-const downloadBtn = document.getElementById("downloadBtn");
+  let currentNumber = 1;
+  let robloxOpened = false;
+  let zooming = false;
+  let musicPlaying = false;
+  let acceleration = 1; // clique acelera multiplicador
 
-const mic = document.getElementById("mic");
-const cam = document.getElementById("cam");
-const micVol = document.getElementById("micVol");
-const sysVol = document.getElementById("sysVol");
-const quality = document.getElementById("quality");
-
-btn.onclick = () => {
-  if (btn.textContent === "Gravar") start();
-  else stop();
-};
-
-async function start() {
-  try {
-    const [res, bitrate] = quality.value.split("|");
-    const [width, height] = res.split("x");
-
-    const screen = await navigator.mediaDevices.getDisplayMedia({
-      video: { width: +width, height: +height, frameRate: 30 },
-      audio: true
-    });
-
-    const audioContext = new AudioContext();
-    const dest = audioContext.createMediaStreamDestination();
-
-    // 🔊 Áudio do sistema
-    if (screen.getAudioTracks().length > 0) {
-      const sysSource = audioContext.createMediaStreamSource(screen);
-      const sysGain = audioContext.createGain();
-      sysGain.gain.value = sysVol.value;
-
-      sysSource.connect(sysGain).connect(dest);
-
-      sysVol.oninput = () => sysGain.gain.value = sysVol.value;
-    }
-
-    let videoTracks = [...screen.getVideoTracks()];
-
-    // 🎙 Microfone
-    if (mic.checked) {
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      const micSource = audioContext.createMediaStreamSource(micStream);
-      const micGain = audioContext.createGain();
-
-      micGain.gain.value = micVol.value;
-
-      micSource.connect(micGain).connect(dest);
-
-      micVol.oninput = () => micGain.gain.value = micVol.value;
-    }
-
-    // 📷 Câmera overlay
-    if (cam.checked) {
-      const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-
-      const screenVideo = document.createElement("video");
-      screenVideo.srcObject = screen;
-      screenVideo.play();
-
-      const camVideo = document.createElement("video");
-      camVideo.srcObject = camStream;
-      camVideo.play();
-
-      function draw() {
-        ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-
-        // overlay canto inferior direito
-        ctx.drawImage(camVideo, canvas.width - 220, canvas.height - 160, 200, 150);
-
-        requestAnimationFrame(draw);
-      }
-
-      draw();
-
-      const canvasStream = canvas.captureStream(30);
-      videoTracks = canvasStream.getVideoTracks();
-    }
-
-    stream = new MediaStream([
-      ...videoTracks,
-      ...dest.stream.getAudioTracks()
-    ]);
-
-    preview.srcObject = stream;
-
-    recorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8,opus",
-      videoBitsPerSecond: +bitrate
-    });
-
-    chunks = [];
-
-    recorder.ondataavailable = e => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "video/webm" });
-      const url = URL.createObjectURL(blob);
-
-      video.style.display = "block";
-      video.src = url;
-
-      downloadBtn.style.display = "block";
-      downloadBtn.onclick = () => {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "gravacao.webm";
-        a.click();
-      };
-    };
-
-    recorder.start(2000);
-
-    btn.textContent = "Parar";
-    btn.classList.add("stop");
-
-  } catch (err) {
-    alert("Erro: " + err);
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
-}
 
-function stop() {
-  recorder.stop();
-  stream.getTracks().forEach(t => t.stop());
+  async function flashWhite(duration=70) {
+    flashEl.style.backgroundColor = 'white';
+    await sleep(duration);
+    flashEl.style.backgroundColor = 'transparent';
+  }
 
-  btn.textContent = "Gravar";
-  btn.classList.remove("stop");
-}
+  function updateNumber(n) {
+    currentNumber = n;
+    numberEl.textContent = n;
+    numberEl.className = '';
+    handsEl.style.display = 'none';
+    fogEl.classList.remove('active');
+    characterEl.style.opacity = 0;
+    characterEl.classList.remove('char1', 'char2');
+    containerEl.classList.remove('zooming');
+
+    if (n === 67) {
+      numberEl.classList.add('blue-gradient');
+      handsEl.style.display = 'block';
+      fogEl.classList.add('active');
+      characterEl.classList.add('char1');
+      characterEl.style.opacity = 1;
+    } else if (n > 61 && n < 67) {
+      numberEl.style.color = 'white';
+    } else if (n <= 5) {
+      numberEl.style.color = 'white';
+    } else if (n <= 61 && n > 0) {
+      numberEl.classList.add('red');
+    }
+
+    if (n === 61) {
+      numberEl.classList.remove('red');
+      numberEl.classList.add('gray');
+      characterEl.classList.add('char2');
+      characterEl.style.opacity = 1;
+      handsEl.style.display = 'none';
+      fogEl.classList.remove('active');
+    }
+  }
+
+  async function blinkNumber(times=3, interval=300) {
+    for(let i=0; i<times*2; i++) {
+      numberEl.style.visibility = (numberEl.style.visibility === 'hidden') ? 'visible' : 'hidden';
+      await sleep(interval);
+    }
+    numberEl.style.visibility = 'visible';
+  }
+
+  async function showGlitchTexts(texts, duration=3000) {
+    for (const txt of texts) {
+      glitchTextEl.textContent = txt;
+      glitchTextEl.style.display = 'block';
+      await sleep(duration);
+      glitchTextEl.style.display = 'none';
+      await sleep(500);
+    }
+  }
+
+  async function zoomNumber() {
+    if (zooming) return;
+    zooming = true;
+    containerEl.classList.add('zooming');
+    await sleep(1200);
+    containerEl.classList.remove('zooming');
+    zooming = false;
+  }
+
+  function abrirRoblox() {
+    if (robloxOpened) return;
+    robloxOpened = true;
+    const placeId = "109983668079237";
+    window.location.href = "roblox://placeId=" + placeId;
+  }
+
+  // Flash sincronizado com batida (aprox 60 BPM)
+  async function flashBeatLoop() {
+    while(true) {
+      await flashWhite(40);
+      await sleep(1000 / acceleration);
+    }
+  }
+
+  async function incrementTo67() {
+    for(let i=1; i<=67; i++) {
+      updateNumber(i);
+      await flashWhite(50);
+      // velocidade com aceleração por clique
+      if(i < 10) await sleep(50 / acceleration);
+      else if(i < 30) await sleep(30 / acceleration);
+      else if(i < 60) await sleep(20 / acceleration);
+      else await sleep(100 / acceleration);
+    }
+  }
+
+  async function decrementFromTo(start, end, sleepTime) {
+    for(let i=start; i>=end; i--) {
+      updateNumber(i);
+      await flashWhite(40);
+      await sleep(sleepTime / acceleration);
+    }
+  }
+
+  async function mainCycle() {
+    if(!musicPlaying) {
+      try {
+        await phonkAudio.play();
+        musicPlaying = true;
+      } catch {}
+    }
+
+    incrementPromise = incrementTo67();
+
+    // Flash batida constante em paralelo
+    flashBeatLoop();
+
+    await incrementPromise;
+    await blinkNumber(3, 300);
+
+    await showGlitchTexts(['SIX', 'SEVEN'], 3000);
+    await zoomNumber();
+
+    await decrementFromTo(67, 61, 450);
+    updateNumber(61);
+
+    await showGlitchTexts(['SIX', 'ONE'], 3000);
+    await zoomNumber();
+
+    await sleep(5000);
+
+    for(let i=61; i>=1; i--) {
+      updateNumber(i);
+      await flashWhite(40);
+      await sleep(20 / acceleration);
+    }
+
+    phonkAudio.pause();
+    abrirRoblox();
+
+    await sleep(3000);
+    acceleration = 1; // reset acelerador
+    mainCycle();
+  }
+
+  // Clique para acelerar o contador temporariamente
+  document.body.addEventListener('click', () => {
+    acceleration = 5;
+    setTimeout(() => acceleration = 1, 3000);
+  });
+
+  mainCycle();
+})();
 </script>
 
 </body>
